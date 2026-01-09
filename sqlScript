@@ -1,0 +1,77 @@
+CREATE DATABASE memoryJar;
+USE memoryJar;
+
+-- 1. TABLA USUARIO
+CREATE TABLE usuario (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    contraseña VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    avatar VARCHAR(255),
+    last_login TIMESTAMP NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_email (email),
+    INDEX idx_active (is_active),
+    INDEX idx_last_login (last_login)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. TABLA JAR
+CREATE TABLE jar (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    color VARCHAR(7) DEFAULT '#add6ed',
+    icon_url VARCHAR(255) DEFAULT '/assets/icons/jar-default.png',
+    is_public BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_is_public (is_public)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. TABLA MEMORY
+CREATE TABLE memory (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    jar_id INT NOT NULL,
+    type ENUM('texto', 'imagen', 'video', 'audio', 'archivo') NOT NULL,
+    text TEXT,
+    file_path VARCHAR(255),
+    mood VARCHAR(50),
+    location VARCHAR(200),
+    favorite BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (jar_id) REFERENCES jar(id) ON DELETE CASCADE,
+    INDEX idx_jar_id (jar_id),
+    INDEX idx_type (type),
+    INDEX idx_favorite (favorite),
+    INDEX idx_mood (mood),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. TABLA TAG
+CREATE TABLE tag (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    color VARCHAR(7) DEFAULT '#95a5a6',
+    
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. TABLA MEMORY_TAG (muchos a muchos)
+CREATE TABLE memory_tag (
+    id_tag INT NOT NULL,
+    id_memory INT NOT NULL,
+    
+    PRIMARY KEY (id_tag, id_memory),
+    FOREIGN KEY (id_tag) REFERENCES tag(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_memory) REFERENCES memory(id) ON DELETE CASCADE,
+    
+    INDEX idx_tag (id_tag),
+    INDEX idx_memory (id_memory)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
