@@ -1,8 +1,10 @@
 package com.project.mamoryJar.service;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import org.hibernate.mapping.List;
+import javax.management.RuntimeErrorException;
+
 import org.springframework.stereotype.Service;
 
 import com.project.mamoryJar.dto.request.UsuarioRequestDTO;
@@ -62,8 +64,24 @@ public class UsuarioService {
 
 
     @Transactional
-    public List<UsuarioResponseDTO> istarUsuarios(){
+    public List<UsuarioResponseDTO> listarUsuarios(){
         List<Usuario> usuarios = usuarioRepository.findAll(); // devuelve una lista (vacía si no hay registros, nunca null).
         List<UsuarioResponseDTO> response = new ArrayList<>();
+
+        for(Usuario usuario : usuarios){
+            response.add(mapToResponse(usuario));
+        }
+
+        return response;
     }
+
+    public void eliminarUsuario(Long id){
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new IllegalStateException("El usuario ha sido encontrado"));
+    
+        usuarioRepository.delete(usuario);
+    }
+
+
+    
 }
