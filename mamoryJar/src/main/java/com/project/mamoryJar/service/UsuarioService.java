@@ -1,14 +1,16 @@
 package com.project.mamoryJar.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.management.RuntimeErrorException;
-
 import org.springframework.stereotype.Service;
 
+import com.project.mamoryJar.dto.request.LoginRequestDTO;
 import com.project.mamoryJar.dto.request.UsuarioRequestDTO;
 import com.project.mamoryJar.dto.response.UsuarioResponseDTO;
+import com.project.mamoryJar.dto.update.UsuarioUpdateDTO;
+import com.project.mamoryJar.mapper.UsuarioMapper;
 import com.project.mamoryJar.model.entity.Usuario;
 import com.project.mamoryJar.repository.UsuarioRepository;
 
@@ -20,20 +22,9 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioMapper usuarioMapper;
 
-    private UsuarioResponseDTO mapToResponse(Usuario usuario){
-        UsuarioResponseDTO dto = new UsuarioResponseDTO();
-        dto.setId(usuario.getId());
-        dto.setNombre(usuario.getNombre());
-        dto.setEmail(usuario.getEmail());
-        dto.setDescripcion(usuario.getDescripcion());
-        dto.setAvatar(usuario.getAvatar());
-        dto.setLastLogin(usuario.getLastLogin());
-
-        return dto;
-    }
-
-    // para escrituras & cambios no para lecturas simples
+    // para escrituras & cambios, NO para lecturas simples
     @Transactional 
     public UsuarioResponseDTO crearUsuario(UsuarioRequestDTO dto){
         if (usuarioRepository.existByEmail(dto.getEmail())) {
@@ -51,7 +42,7 @@ public class UsuarioService {
         usuario.setDescripcion(dto.getDescripcion());
 
         usuarioRepository.save(usuario);
-        return mapToResponse(usuario);
+        return usuarioMapper.mapToResponse(usuario);
     }
 
 
@@ -59,7 +50,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        return mapToResponse(usuario);
+        return usuarioMapper.mapToResponse(usuario);
     }
 
 
@@ -69,7 +60,7 @@ public class UsuarioService {
         List<UsuarioResponseDTO> response = new ArrayList<>();
 
         for(Usuario usuario : usuarios){
-            response.add(mapToResponse(usuario));
+            response.add(usuarioMapper.mapToResponse(usuario));
         }
 
         return response;
@@ -82,6 +73,39 @@ public class UsuarioService {
         usuarioRepository.delete(usuario);
     }
 
+    @Transactional
+    public UsuarioResponseDTO actualizarUsuario(Long id, UsuarioUpdateDTO dto){
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new IllegalStateException("El usuario no fue encontrado"));
 
+        if(dto.getNombre() != null){
+        usuario.setNombre(dto.getNombre());
+        }
+
+        if(dto.getAvatar() != null){
+            usuario.setAvatar(dto.getAvatar());
+        }
+
+        if(dto.getDescripcion() != null){
+            usuario.setDescripcion(dto.getDescripcion());
+        } 
+
+        usuarioRepository.save(usuario);
+        return usuarioMapper.mapToResponse(usuario);
+    }
     
+
+    public UsuarioResponseDTO login(LoginRequestDTO dto){
+        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
+            .orElseThrow(() -> new IllegalStateException("credenciales inválidas"));
+
+        if (!usuario.getContraseña().equals(dto.getContraseña())) {
+            throw new IllegalStateException("credenciales inválidas");
+        }
+
+        usuario.setLastLogin(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+
+        return usuarioMapper.mapToResponse(usuario);
+    }
 }
